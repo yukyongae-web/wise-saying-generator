@@ -33,12 +33,22 @@ document.addEventListener('DOMContentLoaded', () => {
   loadFavorites();
   handleUrlParams();
   setupEventListeners();
-  
+
+  // Pre-load voices for mobile browsers
+  if (window.speechSynthesis) {
+    window.speechSynthesis.getVoices();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+  }
+
   // Set initial quote if not already set by URL params
   if (!state.currentQuote) {
     showRandomQuote();
   }
-  
+
   // Update custom card preview with initial state
   updateCreatorPreview();
   renderFavorites();
@@ -130,7 +140,7 @@ function setupEventListeners() {
     circle.addEventListener('click', (e) => {
       document.querySelectorAll('.theme-circle').forEach(c => c.classList.remove('active'));
       e.currentTarget.classList.add('active');
-      
+
       const preset = e.currentTarget.dataset.preset;
       state.creator.bgType = 'gradient';
       state.creator.bgValue = preset;
@@ -182,7 +192,7 @@ function setupEventListeners() {
 // Tab Switching Logic
 function switchTab(tabName) {
   state.currentTab = tabName;
-  
+
   // Update Navigation UI
   document.querySelectorAll('.nav-tab').forEach(tab => {
     if (tab.dataset.tab === tabName) {
@@ -242,29 +252,29 @@ function handleUrlParams() {
 // Get filtered quotes list
 function getFilteredQuotes() {
   let list = QUOTES;
-  
+
   // Filter by category
   if (state.currentCategory !== 'all') {
     list = list.filter(q => q.category === state.currentCategory);
   }
-  
+
   // Filter by search query
   if (state.searchQuery) {
-    list = list.filter(q => 
+    list = list.filter(q =>
       q.text.toLowerCase().includes(state.searchQuery) ||
       (q.textEn && q.textEn.toLowerCase().includes(state.searchQuery)) ||
       q.author.toLowerCase().includes(state.searchQuery) ||
       (q.authorEn && q.authorEn.toLowerCase().includes(state.searchQuery))
     );
   }
-  
+
   return list;
 }
 
 // Show Random Quote
 function showRandomQuote() {
   const list = getFilteredQuotes();
-  
+
   if (list.length === 0) {
     // Show empty placeholder quote
     displayQuote({
@@ -324,7 +334,7 @@ function displayQuote(quote) {
       quoteAuthorEl.style.opacity = 1;
       quoteAuthorEl.style.transform = 'translateY(0)';
     }
-    
+
     // Update Favorite Button active state
     if (favBtn) {
       const isFav = isFavorite(quote);
@@ -340,11 +350,13 @@ function displayQuote(quote) {
   }, 200);
 }
 
+// Keep a global reference to prevent garbage collection of SpeechSynthesisUtterance in mobile browsers
+window.activeUtterances = [];
+
 // Speech Synthesis (TTS)
-let currentSpeech = null;
 function speakCurrentQuote() {
   if (!state.currentQuote) return;
-  
+
   if (window.speechSynthesis.speaking) {
     window.speechSynthesis.cancel();
     showToast('음성 출력을 중단했습니다.', 'info');
@@ -352,39 +364,59 @@ function speakCurrentQuote() {
   }
 
   const quote = state.currentQuote;
-  
+
   // Build speaking text (Korean first, then English if present)
   let speakText = quote.text;
   if (quote.author) {
     speakText += `, - ${quote.author}`;
   }
 
+  // Clear any stuck queue first
+  window.speechSynthesis.cancel();
+
   const utterance = new SpeechSynthesisUtterance(speakText);
-  
+
   // Set voice to Korean (ko-KR) if available
   const voices = window.speechSynthesis.getVoices();
   const koVoice = voices.find(voice => voice.lang.includes('ko-KR'));
   if (koVoice) {
     utterance.voice = koVoice;
   }
-  
+
   utterance.rate = 0.95; // Slightly slower for better resonance
   utterance.pitch = 1.0;
 
+  // Prevent garbage collection
+  window.activeUtterances.push(utterance);
+
   utterance.onstart = () => {
-    showToast('명언을 낭독합니다...', 'info');
-    document.getElementById('speak-quote-btn').innerHTML = `<i data-lucide="volume-x"></i>`;
-    initLucideIcons();
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const msg = isIOS ? '명언을 낭독합니다. (무음 모드를 해제해 주세요)' : '명언을 낭독합니다...';
+    showToast(msg, 'info');
+
+    const speakBtn = document.getElementById('speak-quote-btn');
+    if (speakBtn) {
+      speakBtn.innerHTML = `<i data-lucide="volume-x"></i>`;
+      initLucideIcons();
+    }
   };
 
   utterance.onend = () => {
-    document.getElementById('speak-quote-btn').innerHTML = `<i data-lucide="volume-2"></i>`;
-    initLucideIcons();
+    window.activeUtterances = window.activeUtterances.filter(u => u !== utterance);
+    const speakBtn = document.getElementById('speak-quote-btn');
+    if (speakBtn) {
+      speakBtn.innerHTML = `<i data-lucide="volume-2"></i>`;
+      initLucideIcons();
+    }
   };
 
-  utterance.onerror = () => {
-    document.getElementById('speak-quote-btn').innerHTML = `<i data-lucide="volume-2"></i>`;
-    initLucideIcons();
+  utterance.onerror = (e) => {
+    window.activeUtterances = window.activeUtterances.filter(u => u !== utterance);
+    const speakBtn = document.getElementById('speak-quote-btn');
+    if (speakBtn) {
+      speakBtn.innerHTML = `<i data-lucide="volume-2"></i>`;
+      initLucideIcons();
+    }
   };
 
   window.speechSynthesis.speak(utterance);
@@ -395,7 +427,7 @@ function copyCurrentQuote() {
   if (!state.currentQuote) return;
   const quote = state.currentQuote;
   const textToCopy = `"${quote.text}"\n- ${quote.author}`;
-  
+
   navigator.clipboard.writeText(textToCopy)
     .then(() => {
       showToast('명언 텍스트가 복사되었습니다.', 'success');
@@ -409,7 +441,7 @@ function copyCurrentQuote() {
 function shareCurrentQuote() {
   if (!state.currentQuote) return;
   const quote = state.currentQuote;
-  
+
   let shareUrl = '';
   if (typeof quote.id === 'number') {
     shareUrl = `${window.location.origin}${window.location.pathname}?id=${quote.id}`;
@@ -491,7 +523,7 @@ function renderFavorites() {
   state.favorites.forEach((quote, idx) => {
     const card = document.createElement('div');
     card.className = 'saved-card';
-    
+
     card.innerHTML = `
       <div>
         <div class="saved-card-text">${escapeHtml(quote.text)}</div>
@@ -512,7 +544,7 @@ function renderFavorites() {
         </div>
       </div>
     `;
-    
+
     grid.appendChild(card);
   });
 
@@ -555,11 +587,27 @@ function speakText(text, author) {
   }
   let speakStr = text;
   if (author) speakStr += `, - ${author}`;
+
+  // Clear any stuck queue first
+  window.speechSynthesis.cancel();
+
   const utterance = new SpeechSynthesisUtterance(speakStr);
+
   const voices = window.speechSynthesis.getVoices();
   const koVoice = voices.find(voice => voice.lang.includes('ko-KR'));
   if (koVoice) utterance.voice = koVoice;
   utterance.rate = 0.95;
+
+  // Prevent garbage collection
+  window.activeUtterances.push(utterance);
+
+  utterance.onend = () => {
+    window.activeUtterances = window.activeUtterances.filter(u => u !== utterance);
+  };
+  utterance.onerror = () => {
+    window.activeUtterances = window.activeUtterances.filter(u => u !== utterance);
+  };
+
   window.speechSynthesis.speak(utterance);
 }
 
@@ -594,7 +642,7 @@ function updateCreatorPreview() {
   // Apply Background Presets
   // Remove existing presets
   cardPreview.className = 'custom-card-wrapper';
-  
+
   if (state.creator.bgType === 'gradient') {
     cardPreview.classList.add(state.creator.bgValue);
   }
@@ -604,17 +652,14 @@ function updateCreatorPreview() {
 function exportCreatorCard() {
   showToast('이미지 제작 중...', 'info');
 
-  // Create high-res canvas (1200x857, which maintains the 1.4:1 ratio)
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
-  
+
   const width = 1200;
-  const height = width / (1.4); // 857.14px
+  const height = width / (1.4);
   canvas.width = width;
   canvas.height = height;
 
-  // Scale settings from state to high-res canvas scale (canvas is 1200px wide, preview is about ~500px wide)
-  // Scale factor = 1200 / previewElementWidth (approx 2.4 times larger)
   const scale = 1200 / document.getElementById('creator-preview-card').offsetWidth;
   const canvasPadding = state.creator.padding * scale;
   const canvasFontSize = state.creator.fontSize * scale;
@@ -629,7 +674,6 @@ function exportCreatorCard() {
       ctx.fillStyle = preset.colors[0];
       ctx.fillRect(0, 0, width, height);
     } else {
-      // Multiple colors
       const stopStep = 1 / (preset.colors.length - 1);
       preset.colors.forEach((col, i) => {
         grad.addColorStop(i * stopStep, col);
@@ -638,12 +682,11 @@ function exportCreatorCard() {
       ctx.fillRect(0, 0, width, height);
     }
   } else {
-    // Default solid color
     ctx.fillStyle = '#12131e';
     ctx.fillRect(0, 0, width, height);
   }
 
-  // 2. Draw Quote Decor (Large background quotation marks)
+  // 2. Draw Quote Decor
   ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -661,8 +704,7 @@ function exportCreatorCard() {
   ctx.textAlign = state.creator.textAlign;
   ctx.textBaseline = 'middle';
   ctx.font = `700 ${canvasFontSize}px ${state.creator.fontFamily === 'serif' ? 'Gowun Batang' : 'Outfit'}`;
-  
-  // Calculate text coordinates
+
   let textX = width / 2;
   if (state.creator.textAlign === 'left') {
     textX = canvasPadding;
@@ -674,7 +716,6 @@ function exportCreatorCard() {
   const textLineHeight = canvasFontSize * 1.5;
   const textY = height / 2 - 20;
 
-  // Wrap text and draw
   const nextY = wrapTextOnCanvas(ctx, state.creator.text, textX, textY, maxTextWidth, textLineHeight);
 
   // 5. Draw Author
@@ -682,7 +723,7 @@ function exportCreatorCard() {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
     ctx.font = `500 ${canvasAuthorSize}px ${state.creator.fontFamily === 'serif' ? 'Gowun Batang' : 'Outfit'}`;
     ctx.textAlign = state.creator.textAlign;
-    
+
     let authorX = width / 2;
     if (state.creator.textAlign === 'left') {
       authorX = canvasPadding;
@@ -694,7 +735,7 @@ function exportCreatorCard() {
     ctx.fillText(`- ${state.creator.author}`, authorX, authorY);
   }
 
-  // 6. Download Trigger
+  // 6. Download or Show Modal (Mobile Logic Added)
   try {
     canvas.toBlob((blob) => {
       if (!blob) {
@@ -702,22 +743,70 @@ function exportCreatorCard() {
         return;
       }
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.download = `sasaek-quote-${Date.now()}.png`;
-      link.href = url;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Clean up the object URL
-      setTimeout(() => URL.revokeObjectURL(url), 100);
-      
-      showToast('이미지가 성공적으로 저장되었습니다.', 'success');
+
+      // 모바일 기기 감지 (화면 너비가 768px 이하이거나 터치 기기일 경우)
+      const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+      if (isMobile) {
+        // 모바일: 커스텀 팝업(모달) 띄우기
+        showMobileImageModal(url);
+        showToast('이미지를 길게 눌러 갤러리에 저장하세요.', 'success');
+      } else {
+        // PC: 기존처럼 직접 다운로드
+        const link = document.createElement('a');
+        link.download = `sasaek-quote-${Date.now()}.png`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+        showToast('이미지가 성공적으로 저장되었습니다.', 'success');
+      }
     }, 'image/png');
   } catch (err) {
-    showToast('이미지 저장에 실패했습니다.', 'info');
+    showToast('이미지 처리 중 오류가 발생했습니다.', 'info');
     console.error(err);
   }
+}
+
+// Mobile Image Modal (New Function)
+function showMobileImageModal(imageUrl) {
+  // 이미 모달이 있다면 제거
+  const existingModal = document.getElementById('mobile-image-modal');
+  if (existingModal) existingModal.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'mobile-image-modal';
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.backgroundColor = 'rgba(0,0,0,0.85)';
+  modal.style.zIndex = '9999';
+  modal.style.display = 'flex';
+  modal.style.flexDirection = 'column';
+  modal.style.alignItems = 'center';
+  modal.style.justifyContent = 'center';
+  modal.style.padding = '20px';
+
+  modal.innerHTML = `
+    <p style="color: white; margin-bottom: 15px; text-align: center; font-weight: bold;">
+      👇 아래 이미지를 길게 꾹 눌러서<br>'내 이미지에 저장' 또는 '다운로드'를 선택하세요.
+    </p>
+    <img src="${imageUrl}" style="max-width: 100%; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+    <button id="close-modal-btn" style="margin-top: 25px; padding: 10px 20px; background: white; color: black; border: none; border-radius: 20px; font-weight: bold; cursor: pointer;">
+      닫기
+    </button>
+  `;
+
+  document.body.appendChild(modal);
+
+  // 닫기 버튼 이벤트
+  document.getElementById('close-modal-btn').addEventListener('click', () => {
+    modal.remove();
+    setTimeout(() => URL.revokeObjectURL(imageUrl), 100); // 닫을 때 메모리 정리
+  });
 }
 
 // Canvas Wrap Text Helper
@@ -758,7 +847,7 @@ function wrapTextOnCanvas(ctx, text, x, y, maxWidth, lineHeight) {
 
   const totalHeight = lines.length * lineHeight;
   let startY = y - (totalHeight / 2) + (lineHeight / 2);
-  
+
   for (let i = 0; i < lines.length; i++) {
     ctx.fillText(lines[i], x, startY + (i * lineHeight));
   }
@@ -773,7 +862,7 @@ function showToast(message, type = 'success') {
 
   const toast = document.createElement('div');
   toast.className = `toast`;
-  
+
   const icon = type === 'success' ? 'check-circle' : 'info';
   const iconClass = type === 'success' ? 'toast-success-icon' : 'toast-info-icon';
 
