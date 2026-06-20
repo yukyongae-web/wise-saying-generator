@@ -761,13 +761,18 @@ p.section-desc {
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-light);
   border-radius: 1rem;
-  padding: 2rem;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   min-height: 220px;
   position: relative;
+  overflow: hidden;
   transition: var(--transition-normal);
+}
+
+.saved-card-body {
+  flex: 1;
+  padding: 1.75rem 1.75rem 1rem;
 }
 
 .saved-card:hover {
@@ -778,11 +783,11 @@ p.section-desc {
 
 .saved-card-text {
   font-family: var(--font-serif);
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 700;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--text-primary);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   word-break: keep-all;
   display: -webkit-box;
   -webkit-line-clamp: 4;
@@ -792,9 +797,9 @@ p.section-desc {
 
 .saved-card-sub {
   font-family: var(--font-sans);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--text-secondary);
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.75rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -804,6 +809,7 @@ p.section-desc {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0 1.75rem 1rem;
 }
 
 .saved-card-author {
@@ -814,7 +820,7 @@ p.section-desc {
 
 .saved-card-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.35rem;
 }
 
 .saved-btn-icon {
@@ -838,6 +844,48 @@ p.section-desc {
 .saved-btn-icon.delete-btn:hover {
   color: var(--accent-danger);
   background-color: rgba(239, 68, 68, 0.08);
+}
+
+/* Saved card CTA button row */
+.saved-card-cta-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--border-light);
+}
+
+.saved-cta-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.75rem 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: var(--transition-fast);
+  letter-spacing: 0.01em;
+}
+
+.saved-cta-btn.image-saved-btn {
+  color: rgba(165, 180, 252, 0.7);
+  border-right: 1px solid var(--border-light);
+}
+
+.saved-cta-btn.share-saved-btn {
+  color: rgba(253, 211, 77, 0.7);
+}
+
+.saved-cta-btn.image-saved-btn:hover {
+  background: rgba(99, 102, 241, 0.14);
+  color: #a5b4fc;
+}
+
+.saved-cta-btn.share-saved-btn:hover {
+  background: rgba(253, 211, 77, 0.1);
+  color: #fcd34d;
 }
 
 /* Empty archive state */

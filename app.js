@@ -525,7 +525,7 @@ function renderFavorites() {
     card.className = 'saved-card';
 
     card.innerHTML = `
-      <div>
+      <div class="saved-card-body">
         <div class="saved-card-text">${escapeHtml(quote.text)}</div>
         <div class="saved-card-sub">${escapeHtml(quote.textEn || '')}</div>
       </div>
@@ -535,13 +535,23 @@ function renderFavorites() {
           <button class="saved-btn-icon speak-saved-btn" title="낭독" data-idx="${idx}">
             <i data-lucide="volume-2" style="width: 1.1rem; height: 1.1rem;"></i>
           </button>
-          <button class="saved-btn-icon copy-saved-btn" title="복사" data-idx="${idx}">
+          <button class="saved-btn-icon copy-saved-btn" title="텍스트 복사" data-idx="${idx}">
             <i data-lucide="copy" style="width: 1.1rem; height: 1.1rem;"></i>
           </button>
           <button class="saved-btn-icon delete-btn" title="삭제" data-idx="${idx}">
             <i data-lucide="trash-2" style="width: 1.1rem; height: 1.1rem;"></i>
           </button>
         </div>
+      </div>
+      <div class="saved-card-cta-row">
+        <button class="saved-cta-btn image-saved-btn" title="이미지 카드 만들기" data-idx="${idx}">
+          <i data-lucide="image" style="width: 1rem; height: 1rem;"></i>
+          <span>이미지 만들기</span>
+        </button>
+        <button class="saved-cta-btn share-saved-btn" title="카카오톡 등으로 공유" data-idx="${idx}">
+          <i data-lucide="share-2" style="width: 1rem; height: 1rem;"></i>
+          <span>공유하기</span>
+        </button>
       </div>
     `;
 
@@ -566,6 +576,22 @@ function renderFavorites() {
     });
   });
 
+  document.querySelectorAll('.image-saved-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = e.currentTarget.dataset.idx;
+      const quote = state.favorites[idx];
+      exportQuoteCard(quote.text, quote.author);
+    });
+  });
+
+  document.querySelectorAll('.share-saved-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = e.currentTarget.dataset.idx;
+      const quote = state.favorites[idx];
+      shareQuote(quote);
+    });
+  });
+
   document.querySelectorAll('.delete-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const idx = parseInt(e.currentTarget.dataset.idx);
@@ -577,6 +603,137 @@ function renderFavorites() {
   });
 
   initLucideIcons();
+}
+
+// Export a quote directly as a card image (reuses creator canvas renderer)
+function exportQuoteCard(text, author) {
+  showToast('이미지 제작 중...', 'info');
+
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const width = 1200;
+  const height = width / 1.4;
+  canvas.width = width;
+  canvas.height = height;
+
+  // Use creator panel width for scale if available, else default 500px
+  const previewEl = document.getElementById('creator-preview-card');
+  const previewWidth = previewEl ? previewEl.offsetWidth || 500 : 500;
+  const scale = width / previewWidth;
+
+  const padding   = state.creator.padding  * scale;
+  const fontSize  = state.creator.fontSize  * scale;
+  const authorSz  = 18 * scale;
+  const watermarkSz = 13 * scale;
+  const fontFace  = state.creator.fontFamily === 'serif' ? 'Gowun Batang' : 'Outfit';
+  const textAlign = state.creator.textAlign;
+
+  // 1. Background
+  const preset = PRESET_GRADIENTS[state.creator.bgValue];
+  if (preset && preset.colors && preset.colors.length > 1) {
+    const grad = ctx.createLinearGradient(0, 0, width, height);
+    const step = 1 / (preset.colors.length - 1);
+    preset.colors.forEach((col, i) => grad.addColorStop(i * step, col));
+    ctx.fillStyle = grad;
+  } else if (preset && preset.colors) {
+    ctx.fillStyle = preset.colors[0];
+  } else {
+    ctx.fillStyle = '#12131e';
+  }
+  ctx.fillRect(0, 0, width, height);
+
+  // 2. Decorative quote mark
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `italic 700 ${180 * scale}px ${fontFace}`;
+  ctx.fillText('\u201C', width / 2, height / 2.5);
+
+  // 3. Watermark
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = `500 ${watermarkSz}px Outfit, sans-serif`;
+  ctx.textAlign = 'right';
+  ctx.fillText('SASAEK / \uc0ac\uc0c9', width - padding, height - padding / 2);
+
+  // 4. Quote text
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = textAlign;
+  ctx.textBaseline = 'middle';
+  ctx.font = `700 ${fontSize}px ${fontFace}`;
+  const textX = textAlign === 'left' ? padding : textAlign === 'right' ? width - padding : width / 2;
+  const nextY = wrapTextOnCanvas(ctx, text, textX, height / 2 - 20, width - padding * 2, fontSize * 1.5);
+
+  // 5. Author
+  if (author) {
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = `500 ${authorSz}px ${fontFace}`;
+    ctx.textAlign = textAlign;
+    const authorX = textAlign === 'left' ? padding : textAlign === 'right' ? width - padding : width / 2;
+    ctx.fillText(`- ${author}`, authorX, nextY + 30 * scale);
+  }
+
+  // 6. Deliver: mobile modal or PC download
+  try {
+    canvas.toBlob((blob) => {
+      if (!blob) { showToast('이미지 생성에 실패했습니다.', 'info'); return; }
+      const url = URL.createObjectURL(blob);
+      const isMobile = window.innerWidth <= 768 || 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      if (isMobile) {
+        showMobileImageModal(url);
+        showToast('이미지를 길게 눌러 갤러리에 저장하세요.', 'success');
+      } else {
+        const link = document.createElement('a');
+        link.download = `sasaek-quote-${Date.now()}.png`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+        showToast('이미지가 성공적으로 저장되었습니다.', 'success');
+      }
+    }, 'image/png');
+  } catch (err) {
+    showToast('이미지 처리 중 오류가 발생했습니다.', 'info');
+    console.error(err);
+  }
+}
+
+// Share a quote via Web Share API (supports KakaoTalk and all share targets)
+async function shareQuote(quote) {
+  const shareText = `"${quote.text}"\n- ${quote.author}`;
+  const shareTitle = '사색 (Sasaek) — 오늘의 명언';
+  const shareUrl = typeof quote.id === 'number'
+    ? `${window.location.origin}${window.location.pathname}?id=${quote.id}`
+    : `${window.location.origin}${window.location.pathname}?text=${encodeURIComponent(quote.text)}&author=${encodeURIComponent(quote.author)}`;
+
+  // Web Share API: 카카오톡, 인스타그램, SMS 등 모든 공유 앱 자동 지원
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: shareTitle,
+        text: shareText,
+        url: shareUrl
+      });
+      // 공유 완료 시 별도 토스트 필요 없음 (OS 레벨 공유 시트가 표시됨)
+    } catch (err) {
+      // 사용자가 공유를 취소한 경우 (AbortError) — 무시
+      if (err.name !== 'AbortError') {
+        // 다른 오류 발생 시 클립보드 폴백
+        fallbackCopyShare(shareText, shareUrl);
+      }
+    }
+  } else {
+    // Web Share API 미지원 환경 (구버전 데스크톱 브라우저 등)
+    fallbackCopyShare(shareText, shareUrl);
+  }
+}
+
+// Fallback: copy share text + link to clipboard
+function fallbackCopyShare(text, url) {
+  const combined = `${text}\n\n🔗 ${url}`;
+  navigator.clipboard.writeText(combined)
+    .then(() => showToast('공유 텍스트가 클립보드에 복사되었습니다.', 'success'))
+    .catch(() => showToast('공유에 실패했습니다.', 'info'));
 }
 
 // Speak standalone text helper
