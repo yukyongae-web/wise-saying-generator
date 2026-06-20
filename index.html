@@ -8,12 +8,28 @@
   <meta property="og:title" content="사색 (Sasaek) - 명언 제조기">
   <meta property="og:description" content="아름다운 디자인의 카드로 명언을 소장하고 나만의 글귀를 제작해보세요.">
   <meta property="og:type" content="website">
-  
+
+  <!-- PWA: Web App Manifest -->
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- PWA: Theme color (Android Chrome toolbar & status bar) -->
+  <meta name="theme-color" content="#6366f1">
+
+  <!-- PWA: Apple / iOS specific meta tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="사색">
+  <link rel="apple-touch-icon" href="/icon-512.png">
+
+  <!-- PWA: Microsoft Tile -->
+  <meta name="msapplication-TileColor" content="#6366f1">
+  <meta name="msapplication-TileImage" content="/icon-512.png">
+
   <title>사색 (Sasaek) — 명언 제조기</title>
-  
+
   <!-- CSS Stylesheet -->
   <link rel="stylesheet" href="styles.css">
-  
+
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -214,6 +230,21 @@
 
   </main>
 
+  <!-- PWA: Install Banner -->
+  <div id="pwa-install-banner" class="pwa-banner" style="display:none;">
+    <div class="pwa-banner-content">
+      <div class="pwa-banner-icon">S</div>
+      <div class="pwa-banner-text">
+        <strong>사색 앱으로 설치하기</strong>
+        <span>홈 화면에 추가하고 앱처럼 바로 실행하세요</span>
+      </div>
+    </div>
+    <div class="pwa-banner-actions">
+      <button id="pwa-install-btn" class="pwa-btn-install">설치</button>
+      <button id="pwa-dismiss-btn" class="pwa-btn-dismiss">나중에</button>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer>
     <p>&copy; 2026 Sasaek. All rights reserved. Designed for Inspiration.</p>
@@ -225,5 +256,74 @@
   <!-- JavaScript Scripts -->
   <script src="quotes.js"></script>
   <script src="app.js"></script>
+
+  <!-- PWA: Service Worker Registration & Install Prompt -->
+  <script>
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('[SW] Registered:', reg.scope))
+          .catch(err => console.warn('[SW] Registration failed:', err));
+      });
+    }
+
+    // PWA Install Prompt
+    let deferredPrompt = null;
+    const installBanner = document.getElementById('pwa-install-banner');
+    const installBtn = document.getElementById('pwa-install-btn');
+    const dismissBtn = document.getElementById('pwa-dismiss-btn');
+
+    // Check if user has already dismissed the banner
+    const dismissed = sessionStorage.getItem('pwa-banner-dismissed');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+
+      // Show the install banner (only if not dismissed this session)
+      if (!dismissed && installBanner) {
+        installBanner.style.display = 'flex';
+      }
+    });
+
+    if (installBtn) {
+      installBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        installBanner.style.display = 'none';
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('[PWA] Install outcome:', outcome);
+        deferredPrompt = null;
+        if (outcome === 'accepted') {
+          if (typeof showToast === 'function') {
+            showToast('사색 앱이 홈 화면에 추가되었습니다! 🎉', 'success');
+          }
+        }
+      });
+    }
+
+    if (dismissBtn) {
+      dismissBtn.addEventListener('click', () => {
+        installBanner.style.display = 'none';
+        sessionStorage.setItem('pwa-banner-dismissed', '1');
+      });
+    }
+
+    // Hide banner once app is installed
+    window.addEventListener('appinstalled', () => {
+      installBanner.style.display = 'none';
+      deferredPrompt = null;
+      console.log('[PWA] App installed.');
+    });
+
+    // Handle shortcut URL param (e.g. ?tab=creator)
+    const tabParam = new URLSearchParams(window.location.search).get('tab');
+    if (tabParam && ['discovery', 'creator', 'saved'].includes(tabParam)) {
+      document.addEventListener('DOMContentLoaded', () => {
+        if (typeof switchTab === 'function') switchTab(tabParam);
+      });
+    }
+  </script>
 </body>
 </html>
