@@ -187,6 +187,21 @@ function setupEventListeners() {
   if (downloadBtn) {
     downloadBtn.addEventListener('click', exportCreatorCard);
   }
+
+  // Logo: home button — click goes back to discovery tab
+  const logoBtn = document.getElementById('logo-home-btn');
+  if (logoBtn) {
+    logoBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchTab('discovery');
+    });
+  }
+
+  // Creator: save to favorites button
+  const creatorSaveBtn = document.getElementById('creator-save-btn');
+  if (creatorSaveBtn) {
+    creatorSaveBtn.addEventListener('click', saveCreatorQuote);
+  }
 }
 
 // Tab Switching Logic
@@ -1049,4 +1064,52 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+// Save Creator Quote to Favorites
+function saveCreatorQuote() {
+  const text = state.creator.text.trim();
+  const author = state.creator.author.trim();
+
+  if (!text) {
+    showToast('저장할 문장을 먼저 입력해 주세요.', 'info');
+    return;
+  }
+
+  // Duplicate check
+  const alreadySaved = state.favorites.some(
+    fav => fav.text === text && fav.author === author
+  );
+
+  if (alreadySaved) {
+    showToast('이미 보관함에 저장된 명언입니다.', 'info');
+    return;
+  }
+
+  const newQuote = {
+    id: 'creator-' + Date.now(),
+    text,
+    textEn: '',
+    author: author || '나',
+    authorEn: '',
+    category: 'custom'
+  };
+
+  state.favorites.push(newQuote);
+  saveFavorites();
+
+  // Button feedback: pulse heart icon
+  const btn = document.getElementById('creator-save-btn');
+  if (btn) {
+    btn.classList.add('saved-pulse');
+    btn.innerHTML = `<i data-lucide="heart" style="width:1.15rem;height:1.15rem;fill:var(--accent-danger);color:var(--accent-danger)"></i><span>저장됨!</span>`;
+    initLucideIcons();
+    setTimeout(() => {
+      btn.classList.remove('saved-pulse');
+      btn.innerHTML = `<i data-lucide="heart" style="width:1.15rem;height:1.15rem;"></i><span>보관함에 저장</span>`;
+      initLucideIcons();
+    }, 2000);
+  }
+
+  showToast('보관함에 저장되었습니다! 🎉', 'success');
 }

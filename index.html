@@ -45,7 +45,7 @@
 
   <!-- Header -->
   <header>
-    <a href="#" class="logo">
+    <a href="javascript:void(0)" class="logo" id="logo-home-btn" title="홈으로 이동" aria-label="홈으로 이동">
       <div class="logo-icon">S</div>
       <span class="logo-text">사색 (Sasaek)</span>
     </a>
@@ -210,6 +210,10 @@
           </div>
 
           <!-- Action -->
+          <button class="btn-save-creator" id="creator-save-btn" aria-label="보관함에 저장">
+            <i data-lucide="heart" style="width: 1.15rem; height: 1.15rem;"></i>
+            <span>보관함에 저장</span>
+          </button>
           <button class="btn-export" id="creator-download-btn">
             <i data-lucide="download" style="width: 1.25rem; height: 1.25rem;"></i>
             <span>이미지 카드 다운로드</span>
