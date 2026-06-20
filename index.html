@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="사색(Sasaek) - 영감을 주는 명언을 탐색하고, 나만의 아름다운 명언 카드로 제작하여 이미지로 다운로드해 보세요.">
+  <meta name="keywords" content="명언, 명언제조기, 명언카드, 위로, 성공, 지혜, 용기, 인생명언">
+  <meta property="og:title" content="사색 (Sasaek) - 명언 제조기">
+  <meta property="og:description" content="아름다운 디자인의 카드로 명언을 소장하고 나만의 글귀를 제작해보세요.">
+  <meta property="og:type" content="website">
+  
+  <title>사색 (Sasaek) — 명언 제조기</title>
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- Floating Background Blobs & Grid -->
+  <div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+  <div class="bg-grid"></div>
+
+  <!-- Header -->
+  <header>
+    <a href="#" class="logo">
+      <div class="logo-icon">S</div>
+      <span class="logo-text">사색 (Sasaek)</span>
+    </a>
+    <nav>
+      <button class="nav-tab active" data-tab="discovery" id="nav-discovery">
+        <i data-lucide="compass" style="width: 1.1rem; height: 1.1rem;"></i>
+        <span>명언 탐색</span>
+      </button>
+      <button class="nav-tab" data-tab="creator" id="nav-creator">
+        <i data-lucide="pen-tool" style="width: 1.1rem; height: 1.1rem;"></i>
+        <span>명언 제작</span>
+      </button>
+      <button class="nav-tab" data-tab="saved" id="nav-saved">
+        <i data-lucide="archive" style="width: 1.1rem; height: 1.1rem;"></i>
+        <span>보관함</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- Main Content Wrapper -->
+  <main>
+    
+    <!-- Tab: Discovery (명언 탐색) -->
+    <section id="discovery-tab" class="tab-content active">
+      <h1 class="section-title">오늘의 사색</h1>
+      <p class="section-desc">지혜로운 이들의 한마디가 당신의 하루에 영감이 되기를 바랍니다.</p>
+      
+      <div class="discovery-container">
+        <!-- Filter bar -->
+        <div class="filter-bar" id="category-filters">
+          <button class="filter-btn active" data-category="all">전체</button>
+          <button class="filter-btn" data-category="life">인생</button>
+          <button class="filter-btn" data-category="success">성공 & 노력</button>
+          <button class="filter-btn" data-category="wisdom">지혜 & 철학</button>
+          <button class="filter-btn" data-category="courage">용기 & 도전</button>
+          <button class="filter-btn" data-category="comfort">위로 & 힐링</button>
+        </div>
+        
+        <!-- Search bar -->
+        <div class="search-wrapper">
+          <i data-lucide="search" class="search-icon" style="width: 1.1rem; height: 1.1rem;"></i>
+          <input type="text" id="search-input" class="search-input" placeholder="키워드 또는 인물 검색..." aria-label="명언 검색">
+        </div>
+        
+        <!-- Display Card -->
+        <div class="quote-display-card" id="quote-card">
+          <span class="quote-decor">“</span>
+          <div class="quote-body-wrapper">
+            <h2 class="quote-text-main" id="quote-text-main">...</h2>
+            <p class="quote-text-sub" id="quote-text-sub">...</p>
+            <span class="quote-author" id="quote-author">...</span>
+          </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="card-action-bar">
+          <button class="action-btn" id="fav-quote-btn" title="보관함 저장" aria-label="보관함 저장">
+            <i data-lucide="heart"></i>
+          </button>
+          <button class="action-btn" id="speak-quote-btn" title="명언 낭독" aria-label="명언 낭독">
+            <i data-lucide="volume-2"></i>
+          </button>
+          <button class="action-btn" id="copy-quote-btn" title="텍스트 복사" aria-label="텍스트 복사">
+            <i data-lucide="copy"></i>
+          </button>
+          <button class="action-btn" id="share-quote-btn" title="공유 링크 복사" aria-label="공유 링크 복사">
+            <i data-lucide="share-2"></i>
+          </button>
+          <button class="btn-primary-ripple" id="next-quote-btn">
+            <span>다음 명언</span>
+            <i data-lucide="arrow-right" style="width: 1.2rem; height: 1.2rem;"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab: Creator (명언 제작) -->
+    <section id="creator-tab" class="tab-content">
+      <h1 class="section-title">나만의 명언 카드 만들기</h1>
+      <p class="section-desc">소중한 문장이나 간직하고 싶은 명언을 커스텀 카드로 제작해 다운로드하세요.</p>
+      
+      <div class="creator-layout">
+        <!-- Live Preview -->
+        <div class="canvas-preview-container">
+          <h2 class="preview-title">
+            <i data-lucide="eye" style="width: 1.15rem; height: 1.15rem;"></i>
+            <span>실시간 미리보기</span>
+          </h2>
+          <div class="custom-card-wrapper preset-aurora" id="creator-preview-card">
+            <div class="custom-quote-text" id="preview-quote-text">
+              상상력은 모든 것이다. 그것은 삶이 앞으로 만들어갈 것들의 예고편이다.
+            </div>
+            <div class="custom-quote-author" id="preview-quote-author">
+              - 알베르트 아인슈타인
+            </div>
+            <div class="custom-card-watermark">Sasaek / 사색</div>
+          </div>
+        </div>
+        
+        <!-- Controls Panel -->
+        <div class="creator-controls-panel">
+          
+          <!-- Content Input -->
+          <div class="control-group">
+            <label for="creator-text" class="control-label">문장 입력</label>
+            <textarea id="creator-text" class="control-input-text" placeholder="마음에 남길 문장을 적어보세요.">상상력은 모든 것이다. 그것은 삶이 앞으로 만들어갈 것들의 예고편이다.</textarea>
+          </div>
+          
+          <div class="control-group">
+            <label for="creator-author" class="control-label">작성자 / 인물 이름</label>
+            <input type="text" id="creator-author" class="control-input-single" value="알베르트 아인슈타인" placeholder="작성자를 입력해 주세요 (생략 가능)">
+          </div>
+
+          <!-- Color/Gradient Picker -->
+          <div class="control-group">
+            <span class="control-label">배경 디자인 선택</span>
+            <div class="theme-picker">
+              <div class="theme-circle preset-aurora active" data-preset="preset-aurora" title="오로라"></div>
+              <div class="theme-circle preset-sunset" data-preset="preset-sunset" title="노을"></div>
+              <div class="theme-circle preset-ocean" data-preset="preset-ocean" title="심해"></div>
+              <div class="theme-circle preset-forest" data-preset="preset-forest" title="숲속"></div>
+              <div class="theme-circle preset-cosmic" data-preset="preset-cosmic" title="우주"></div>
+              <div class="theme-circle preset-dark" data-preset="preset-dark" title="미드나잇"></div>
+            </div>
+          </div>
+
+          <!-- Font Select -->
+          <div class="control-group">
+            <span class="control-label">글꼴 스타일</span>
+            <div class="btn-group-toggle" id="font-toggle">
+              <button class="toggle-option active" data-value="serif">바탕체 (진지함)</button>
+              <button class="toggle-option" data-value="sans">고딕체 (현대적)</button>
+            </div>
+          </div>
+
+          <!-- Alignment -->
+          <div class="control-group">
+            <span class="control-label">텍스트 정렬</span>
+            <div class="btn-group-toggle" id="align-toggle">
+              <button class="toggle-option" data-value="left">왼쪽</button>
+              <button class="toggle-option active" data-value="center">가운데</button>
+              <button class="toggle-option" data-value="right">오른쪽</button>
+            </div>
+          </div>
+
+          <!-- Font Size Slider -->
+          <div class="control-group">
+            <div class="control-label">
+              <span>글자 크기</span>
+              <span id="font-size-val">24px</span>
+            </div>
+            <input type="range" id="creator-font-size" class="control-slider" min="16" max="42" value="24" aria-label="글자 크기">
+          </div>
+
+          <!-- Padding Slider -->
+          <div class="control-group">
+            <div class="control-label">
+              <span>안쪽 여백 (패딩)</span>
+              <span id="padding-val">40px</span>
+            </div>
+            <input type="range" id="creator-padding" class="control-slider" min="20" max="80" value="40" aria-label="안쪽 여백">
+          </div>
+
+          <!-- Action -->
+          <button class="btn-export" id="creator-download-btn">
+            <i data-lucide="download" style="width: 1.25rem; height: 1.25rem;"></i>
+            <span>이미지 카드 다운로드</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab: Saved (보관함) -->
+    <section id="saved-tab" class="tab-content">
+      <h1 class="section-title">나의 보관함</h1>
+      <p class="section-desc font-sans">마음에 저장해 둔 소중한 명언들을 이곳에서 모아볼 수 있습니다.</p>
+      
+      <div class="saved-grid" id="saved-grid">
+        <!-- Rendered dynamically in JavaScript -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2026 Sasaek. All rights reserved. Designed for Inspiration.</p>
+  </footer>
+
+  <!-- Toast Notifications Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- JavaScript Scripts -->
+  <script src="quotes.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
