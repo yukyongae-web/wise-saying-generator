@@ -894,7 +894,7 @@ p.section-desc {
 /* Saved card CTA button row */
 .saved-card-cta-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   border-top: 1px solid var(--border-light);
 }
 
@@ -916,21 +916,11 @@ p.section-desc {
 
 .saved-cta-btn.image-saved-btn {
   color: rgba(165, 180, 252, 0.7);
-  border-right: 1px solid var(--border-light);
-}
-
-.saved-cta-btn.share-saved-btn {
-  color: rgba(253, 211, 77, 0.7);
 }
 
 .saved-cta-btn.image-saved-btn:hover {
   background: rgba(99, 102, 241, 0.14);
   color: #a5b4fc;
-}
-
-.saved-cta-btn.share-saved-btn:hover {
-  background: rgba(253, 211, 77, 0.1);
-  color: #fcd34d;
 }
 
 /* Empty archive state */

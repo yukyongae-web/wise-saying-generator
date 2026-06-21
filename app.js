@@ -563,10 +563,6 @@ function renderFavorites() {
           <i data-lucide="image" style="width: 1rem; height: 1rem;"></i>
           <span>이미지 만들기</span>
         </button>
-        <button class="saved-cta-btn share-saved-btn" title="카카오톡 등으로 공유" data-idx="${idx}">
-          <i data-lucide="share-2" style="width: 1rem; height: 1rem;"></i>
-          <span>공유하기</span>
-        </button>
       </div>
     `;
 
@@ -596,14 +592,6 @@ function renderFavorites() {
       const idx = e.currentTarget.dataset.idx;
       const quote = state.favorites[idx];
       exportQuoteCard(quote.text, quote.author);
-    });
-  });
-
-  document.querySelectorAll('.share-saved-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const idx = e.currentTarget.dataset.idx;
-      const quote = state.favorites[idx];
-      shareQuote(quote);
     });
   });
 
